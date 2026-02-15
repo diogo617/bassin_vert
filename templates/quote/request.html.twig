@@ -1,0 +1,203 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Demandez un Devis - Bassin Vert{% endblock %}
+
+{% block body %}
+<style>
+    .quote-container {
+        max-width: 800px;
+        margin: 60px auto;
+        padding: 40px;
+        background-color: var(--color-surface-light);
+        border-radius: var(--border-radius);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    }
+    
+    .form-group {
+        margin-bottom: 25px;
+    }
+    
+    .form-label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+        color: var(--color-primary-dark);
+    }
+    
+    .form-input, .form-select {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-family: var(--font-body);
+        font-size: 1rem;
+        transition: border-color 0.3s ease;
+    }
+    
+    .form-input:focus, .form-select:focus {
+        outline: none;
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 3px rgba(138, 154, 91, 0.1);
+    }
+    
+    .btn-submit {
+        background-color: var(--color-primary);
+        color: white;
+        padding: 14px 30px;
+        border: none;
+        border-radius: 50px;
+        font-weight: 600;
+        font-size: 1.1rem;
+        cursor: pointer;
+        width: 100%;
+        transition: background-color 0.3s ease;
+    }
+    
+    .btn-submit:hover {
+        background-color: var(--color-primary-dark);
+    }
+
+    .form-file {
+        padding: 10px;
+        background: var(--color-bg-light);
+        border-radius: 6px;
+    }
+</style>
+
+<div class="container">
+    <div class="quote-container">
+        <h1 style="text-align: center; margin-bottom: 30px;">Demandez un Devis</h1>
+        <p style="text-align: center; color: var(--color-text-muted); margin-bottom: 40px;">
+            Parlez-nous de votre projet de jardin, et nous vous répondrons avec une estimation personnalisée.
+        </p>
+
+        {{ form_start(quoteForm) }}
+            
+            {% if form_errors(quoteForm) %}
+                <div class="alert alert-danger">
+                    {{ form_errors(quoteForm) }}
+                </div>
+            {% endif %}
+
+            <div class="form-group">
+                {{ form_label(quoteForm.contactName, null, {'label_attr': {'class': 'form-label'}}) }}
+                {{ form_widget(quoteForm.contactName) }}
+                {{ form_errors(quoteForm.contactName) }}
+            </div>
+
+            <div class="form-group">
+                {{ form_label(quoteForm.contactEmail, null, {'label_attr': {'class': 'form-label'}}) }}
+                {{ form_widget(quoteForm.contactEmail) }}
+                {{ form_errors(quoteForm.contactEmail) }}
+            </div>
+
+            <div class="form-group">
+                {{ form_label(quoteForm.serviceType, null, {'label_attr': {'class': 'form-label'}}) }}
+                {{ form_widget(quoteForm.serviceType) }}
+            </div>
+
+            <div class="row" style="display: flex; gap: 20px;">
+                <div class="form-group" style="flex: 1;">
+                    {{ form_label(quoteForm.gardenSize, null, {'label_attr': {'class': 'form-label'}}) }}
+                    {{ form_widget(quoteForm.gardenSize) }}
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    {{ form_label(quoteForm.location, null, {'label_attr': {'class': 'form-label'}}) }}
+                    {{ form_widget(quoteForm.location) }}
+                </div>
+            </div>
+
+            <div class="form-group">
+                {{ form_label(quoteForm.image, null, {'label_attr': {'class': 'form-label'}}) }}
+                {{ form_widget(quoteForm.image) }}
+                <small style="color: var(--color-text-muted); display: block; margin-top: 5px;">
+                    Formats supportés : JPEG, PNG, WEBP (Max 5MB)
+                </small>
+                {{ form_errors(quoteForm.image) }}
+            </div>
+
+            <!-- Booking Section -->
+            <div class="form-group">
+                <label class="form-label">Choisissez une Date et une Heure</label>
+                <div id="calendar" style="margin-bottom: 20px; background: white; padding: 10px; border-radius: 8px;"></div>
+                {# Hide the actual input, but keep it for form submission #}
+                <div style="display:none;">
+                    {{ form_widget(quoteForm.scheduledAt) }}
+                </div>
+                <p id="selected-slot" style="color: var(--color-primary); font-weight: 600;"></p>
+            </div>
+
+            <button type="submit" class="btn-submit" id="btn-submit" disabled>Sélectionnez un créneau horaire pour soumettre</button>
+
+        {{ form_end(quoteForm) }}
+    </div>
+</div>
+
+<!-- FullCalendar CDN -->
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var calendarEl = document.getElementById('calendar');
+        var inputEl = document.getElementById('quote_scheduledAt'); // ID generated by Symfony
+        var displayEl = document.getElementById('selected-slot');
+        var submitBtn = document.getElementById('btn-submit');
+
+        var calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'timeGridWeek',
+            locale: 'fr',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'timeGridWeek,timeGridDay'
+            },
+            slotMinTime: '07:00:00', // Wider range to show hours clearly
+            slotMaxTime: '20:00:00',
+            allDaySlot: false,
+            // weekends: false, // REMOVED: determined by businessHours
+            height: 'auto',
+            selectable: true,
+            selectMirror: true,
+            
+            // Dynamic Business Hours
+            businessHours: {{ businessHours|json_encode|raw }},
+            selectConstraint: 'businessHours', // Prevent selection outside business hours
+            
+            events: '/api/bookings', // Fetch busy slots
+            
+            select: function(info) {
+                // User selects a slot
+                var start = info.startStr; // ISO8601
+                
+                // Simple validation: strictly future dates
+                if (info.start < new Date()) {
+                    alert('Veuillez sélectionner une date/heure future.');
+                    calendar.unselect();
+                    return;
+                }
+
+                // Update Input
+                // Symfony expects HTML5 datetime-local format: YYYY-MM-DDTHH:MM
+                // We need to adjust format if widget is single_text
+                var date = new Date(info.start);
+                // format to YYYY-MM-DDTHH:MM
+                var iso = date.getFullYear() + '-' + 
+                    String(date.getMonth() + 1).padStart(2, '0') + '-' + 
+                    String(date.getDate()).padStart(2, '0') + 'T' + 
+                    String(date.getHours()).padStart(2, '0') + ':' + 
+                    String(date.getMinutes()).padStart(2, '0');
+                
+                inputEl.value = iso; // Set hidden input
+                displayEl.textContent = 'Sélectionné : ' + date.toLocaleString('fr-FR');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Envoyer la demande';
+            },
+            
+            eventClick: function(info) {
+                alert('Ce créneau est déjà réservé.');
+            }
+        });
+        
+        calendar.render();
+    });
+</script>
+{% endblock %}

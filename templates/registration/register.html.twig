@@ -1,0 +1,54 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Inscription - Bassin Vert{% endblock %}
+
+{% block body %}
+<style>
+    .auth-container {
+        max-width: 400px;
+        margin: 80px auto;
+        padding: 40px;
+        background-color: var(--color-surface-light);
+        border-radius: var(--border-radius);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        text-align: center;
+    }
+    .form-input {
+        width: 100%;
+        padding: 12px;
+        margin-bottom: 20px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+    }
+    .btn-register {
+        width: 100%;
+        padding: 12px;
+        background-color: var(--color-primary);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+</style>
+
+<div class="container">
+    <div class="auth-container">
+        <h1 class="h3 mb-3 font-weight-normal">Créer un Compte</h1>
+
+        {{ form_start(registrationForm) }}
+            {{ form_row(registrationForm.email) }}
+            {{ form_row(registrationForm.plainPassword) }}
+            <div style="text-align: left; margin-bottom: 20px;">
+                {{ form_row(registrationForm.agreeTerms) }}
+            </div>
+
+            <button type="submit" class="btn-register">S'inscrire</button>
+        {{ form_end(registrationForm) }}
+        
+        <div style="margin-top: 20px;">
+            <p>Vous avez déjà un compte ? <a href="{{ path('app_login') }}">Connectez-vous</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}

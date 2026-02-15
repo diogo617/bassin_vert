@@ -1,0 +1,95 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Nos Services - Bassin Vert{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .page-header {
+            background-color: var(--color-primary-dark);
+            color: #fff;
+            padding: 60px 0;
+            text-align: center;
+        }
+
+        .services-list {
+            padding: 80px 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 40px;
+        }
+
+        .service-item {
+            background: var(--color-surface-light);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            transition: transform 0.3s;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .service-item:hover {
+            transform: translateY(-5px);
+        }
+
+        .service-icon-large {
+            font-size: 4rem;
+            text-align: center;
+            padding: 40px 0;
+            background: var(--color-bg-light);
+            color: var(--color-primary);
+        }
+
+        .service-details {
+            padding: 30px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .service-details h2 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: var(--color-primary-dark);
+        }
+
+        .service-price {
+            font-weight: 700;
+            color: var(--color-secondary);
+            margin-top: auto;
+            padding-top: 20px;
+            font-size: 1.1rem;
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <header class="page-header">
+        <div class="container">
+            <h1>Nos Services de Jardinage</h1>
+            <p>De l'entretien à la refonte complète, nous apportons le Zen à vos extérieurs.</p>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="services-list">
+            {% for service in services %}
+                <div class="service-item">
+                    <div class="service-icon-large">{{ service.icon }}</div>
+                    <div class="service-details">
+                        <h2>{{ service.title }}</h2>
+                        <p>{{ service.description }}</p>
+                        <div class="service-price">{{ service.price }}</div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <div style="text-align: center; margin-bottom: 80px;">
+            <h2>Prêt à transformer votre jardin ?</h2>
+            <br>
+            <a href="{{ path('app_quote') }}" class="btn-cta">Obtenez un Devis Gratuit</a>
+        </div>
+    </div>
+{% endblock %}

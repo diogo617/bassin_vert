@@ -1,0 +1,95 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Gérer les Horaires - Admin{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .admin-layout { display: grid; grid-template-columns: 250px 1fr; min-height: calc(100vh - 80px); }
+        .sidebar { background-color: var(--color-primary-dark); color: #fff; padding: 20px; }
+        .sidebar a { display: block; color: #ccc; padding: 10px; margin-bottom: 5px; }
+        .sidebar a:hover, .sidebar a.active { background-color: var(--color-primary); color: #fff; }
+        .content { padding: 30px; }
+        
+        .schedule-table { width: 100%; border-collapse: collapse; margin-top: 20px; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .schedule-table th, .schedule-table td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; }
+        .schedule-table th { background-color: var(--color-bg-light); }
+        
+        .switch { position: relative; display: inline-block; width: 50px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 24px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--color-primary); }
+        input:checked + .slider:before { transform: translateX(26px); }
+
+        .time-input { padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+        .btn-save { background-color: var(--color-primary); color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-size: 1rem; margin-top: 20px; }
+        .btn-save:hover { background-color: var(--color-primary-dark); }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <div class="admin-layout">
+        <aside class="sidebar">
+            <h3>Gardener Admin</h3>
+            <nav style="margin-top: 20px;">
+                <a href="{{ path('admin_dashboard') }}">Tableau de Bord</a>
+                <a href="{{ path('admin_calendar') }}">Calendrier</a>
+                <a href="{{ path('admin_schedule') }}" class="active">Heures d'Ouverture</a>
+                <a href="{{ path('admin_reviews') }}">Avis (MongoDB)</a>
+            </nav>
+        </aside>
+
+        <main class="content">
+            <h1>Gérer les Horaires d'Ouverture</h1>
+            
+            {% for message in app.flashes('success') %}
+                <div style="background: #d4edda; color: #155724; padding: 15px; margin-bottom: 20px; border-radius: 4px;">
+                    {{ message }}
+                </div>
+            {% endfor %}
+
+            <form method="post">
+                <table class="schedule-table">
+                    <thead>
+                        <tr>
+                            <th>Jour</th>
+                            <th>Actif</th>
+                            <th>Heure de Début</th>
+                            <th>Heure de Fin</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% set days = {1: 'Lundi', 2: 'Mardi', 3: 'Mercredi', 4: 'Jeudi', 5: 'Vendredi', 6: 'Samedi', 7: 'Dimanche'} %}
+                        {% for day in 1..7 %}
+                            {% set schedule = null %}
+                            {% for s in schedules %}
+                                {% if s.dayOfWeek == day %}
+                                    {% set schedule = s %}
+                                {% endif %}
+                            {% endfor %}
+                            
+                            <tr>
+                                <td><strong>{{ days[day] }}</strong></td>
+                                <td>
+                                    <label class="switch">
+                                        <input type="checkbox" name="active_{{ day }}" {% if schedule and schedule.isActive %}checked{% endif %}>
+                                        <span class="slider"></span>
+                                    </label>
+                                </td>
+                                <td>
+                                    <input type="time" class="time-input" name="start_{{ day }}" value="{{ schedule and schedule.startTime ? schedule.startTime|date('H:i') : '09:00' }}">
+                                </td>
+                                <td>
+                                    <input type="time" class="time-input" name="end_{{ day }}" value="{{ schedule and schedule.endTime ? schedule.endTime|date('H:i') : '18:00' }}">
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                
+                <button type="submit" class="btn-save">Enregistrer les Changements</button>
+            </form>
+        </main>
+    </div>
+{% endblock %}

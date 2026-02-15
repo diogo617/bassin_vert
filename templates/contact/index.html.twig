@@ -1,0 +1,111 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Contactez-nous - Bassin Vert{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .contact-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            padding: 80px 0;
+        }
+
+        @media (max-width: 768px) {
+            .contact-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .contact-info {
+            background: var(--color-surface-light);
+            padding: 40px;
+            border-radius: var(--border-radius);
+            height: fit-content;
+        }
+
+        .contact-form-wrapper {
+            background: var(--color-surface-light);
+            padding: 40px;
+            border-radius: var(--border-radius);
+        }
+
+        .info-item {
+            margin-bottom: 30px;
+        }
+
+        .info-item h3 {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            color: var(--color-primary);
+        }
+
+        .btn-send {
+            width: 100%;
+            padding: 15px;
+            background-color: var(--color-primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <div class="container">
+        <h1 style="text-align: center; margin-top: 60px; margin-bottom: 20px;">Contactez-nous</h1>
+        
+        <div class="contact-layout">
+            <div class="contact-info">
+                <div class="info-item">
+                    <h3>📍 Adresse</h3>
+                    <p>123 Allée du Jardin<br>Quartier Zen, 75000 Paris</p>
+                </div>
+                <div class="info-item">
+                    <h3>📞 Téléphone</h3>
+                    <p>+33 1 23 45 67 89</p>
+                </div>
+                <div class="info-item">
+                    <h3>✉️ Email</h3>
+                    <p>contact@bassinvert.com</p>
+                </div>
+                <div class="info-item">
+                    <h3>🕒 Horaires</h3>
+                    <p>Lun - Ven : 9:00 - 18:00<br>Sam : 10:00 - 15:00</p>
+                </div>
+            </div>
+
+            <div class="contact-form-wrapper">
+                {% for message in app.flashes('success') %}
+                    <div style="background: #d4edda; color: #155724; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+
+                {{ form_start(form) }}
+                    <div style="margin-bottom: 20px;">
+                        {{ form_label(form.name, null, {'label_attr': {'style': 'display:block; margin-bottom:8px; font-weight:500;'}}) }}
+                        {{ form_widget(form.name) }}
+                    </div>
+                    <div style="margin-bottom: 20px;">
+                        {{ form_label(form.email, null, {'label_attr': {'style': 'display:block; margin-bottom:8px; font-weight:500;'}}) }}
+                        {{ form_widget(form.email) }}
+                    </div>
+                    <div style="margin-bottom: 20px;">
+                        {{ form_label(form.subject, null, {'label_attr': {'style': 'display:block; margin-bottom:8px; font-weight:500;'}}) }}
+                        {{ form_widget(form.subject) }}
+                    </div>
+                    <div style="margin-bottom: 20px;">
+                        {{ form_label(form.message, null, {'label_attr': {'style': 'display:block; margin-bottom:8px; font-weight:500;'}}) }}
+                        {{ form_widget(form.message) }}
+                    </div>
+                    
+                    <button type="submit" class="btn-send">Envoyer le message</button>
+                {{ form_end(form) }}
+            </div>
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,62 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Connexion - Bassin Vert{% endblock %}
+
+{% block body %}
+<style>
+    .auth-container {
+        max-width: 400px;
+        margin: 80px auto;
+        padding: 40px;
+        background-color: var(--color-surface-light);
+        border-radius: var(--border-radius);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        text-align: center;
+    }
+    .form-input {
+        width: 100%;
+        padding: 12px;
+        margin-bottom: 20px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+    }
+    .btn-login {
+        width: 100%;
+        padding: 12px;
+        background-color: var(--color-primary);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+</style>
+
+<div class="container">
+    <div class="auth-container">
+        <h1 class="h3 mb-3 font-weight-normal">Bon retour</h1>
+        
+        <form method="post">
+            {% if error %}
+                <div class="alert alert-danger" style="color: red; margin-bottom: 15px;">{{ error.messageKey|trans(error.messageData, 'security') }}</div>
+            {% endif %}
+
+            <label for="inputEmail" style="display:none;">Email</label>
+            <input type="email" value="{{ last_username }}" name="_username" id="inputEmail" class="form-input" autocomplete="email" required autofocus placeholder="Adresse Email">
+            
+            <label for="inputPassword" style="display:none;">Mot de passe</label>
+            <input type="password" name="_password" id="inputPassword" class="form-input" autocomplete="current-password" required placeholder="Mot de passe">
+
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+
+            <button class="btn-login" type="submit">
+                Se connecter
+            </button>
+            
+            <div style="margin-top: 20px;">
+                <p>Pas encore de compte ? <a href="{{ path('app_register') }}">S'inscrire</a></p>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

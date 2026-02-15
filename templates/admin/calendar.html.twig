@@ -1,0 +1,313 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Calendrier - Admin{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .admin-layout { display: grid; grid-template-columns: 250px 1fr; min-height: calc(100vh - 80px); }
+        .sidebar { background-color: var(--color-primary-dark); color: #fff; padding: 20px; }
+        .sidebar a { display: block; color: #ccc; padding: 10px; margin-bottom: 5px; }
+        .sidebar a:hover, .sidebar a.active { background-color: var(--color-primary); color: #fff; }
+        .content { padding: 30px; }
+        
+        /* Calendar Styles */
+        .calendar-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        .btn-nav {
+            background: var(--color-primary);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+        }
+        
+        .day-column {
+            background: #fff;
+            border-radius: 8px;
+            min-height: 400px;
+            padding: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        .day-header {
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .appt-card {
+            background: var(--color-bg-light);
+            padding: 8px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            border-left: 3px solid var(--color-primary);
+            font-size: 0.9rem;
+        }
+        
+        .appt-time {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 4px;
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <div class="admin-layout">
+        <aside class="sidebar">
+            <h3>Administration</h3>
+            <nav style="margin-top: 20px;">
+                <a href="{{ path('admin_dashboard') }}">Tableau de Bord</a>
+                <a href="{{ path('admin_calendar') }}" class="active">Calendrier</a>
+                <a href="{{ path('admin_schedule') }}">Heures d'Ouverture</a>
+                <a href="{{ path('admin_reviews') }}">Avis (MongoDB)</a>
+            </nav>
+        </aside>
+
+        <main class="content">
+            <h1>Calendrier Principal</h1>
+            
+            <div class="calendar-controls">
+                <button id="prevWeek" class="btn-nav">&lt; Semaine Précédente</button>
+                <h3 id="currentWeekDisplay" style="margin:0;"></h3>
+                <button id="nextWeek" class="btn-nav">Semaine Suivante &gt;</button>
+            </div>
+
+            <div class="calendar-grid" id="calendarGrid">
+                <!-- Days injected by JS -->
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Business Hours from Controller
+            const businessHours = {{ businessHours|json_encode|raw }};
+            
+            // Deserialize appointments from Twig (kept for legacy/fallback)
+            const appointments = [
+                {% for appt in appointments %}
+                    {
+                        id: 'quote_{{ appt.id }}',
+                        date: "{{ appt.scheduledAt|date('Y-m-d H:i') }}",
+                        customer: "{{ appt.user ? appt.user.email : 'Unknown' }}",
+                        service: "{{ appt.serviceType }}",
+                        status: "{{ appt.status }}",
+                        type: 'booking'
+                    },
+                {% endfor %}
+            ];
+
+            // Fetch unavailabilities via API to merge with bookings (or pass from controller if preferred, but API is cleaner for dynamic updates)
+            // For now, let's just fetch everything from the API we built
+            
+            let currentStartOfWeek = getStartOfWeek(new Date());
+
+            function getStartOfWeek(date) {
+                const d = new Date(date);
+                const day = d.getDay();
+                const diff = d.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
+                return new Date(d.setDate(diff));
+            }
+
+            function formatDate(date) {
+                return date.toISOString().split('T')[0];
+            }
+
+            async function fetchEvents() {
+                try {
+                    const response = await fetch('/api/bookings');
+                    const events = await response.json();
+                    return events;
+                } catch (error) {
+                    console.error('Error fetching events:', error);
+                    return [];
+                }
+            }
+            
+            function isWorkingHour(date, businessHours) {
+                const day = date.getDay(); // 0-6
+                const timeStr = date.toTimeString().substring(0, 5); // HH:MM
+                
+                for (const bh of businessHours) {
+                    if (bh.daysOfWeek.includes(day)) {
+                        if (timeStr >= bh.startTime && timeStr < bh.endTime) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            }
+
+            async function renderCalendar() {
+                const events = await fetchEvents();
+                
+                const grid = document.getElementById('calendarGrid');
+                const display = document.getElementById('currentWeekDisplay');
+                grid.innerHTML = '';
+                
+                const endOfWeek = new Date(currentStartOfWeek);
+                endOfWeek.setDate(currentStartOfWeek.getDate() + 6);
+                
+                display.textContent = `${currentStartOfWeek.toLocaleDateString()} - ${endOfWeek.toLocaleDateString()}`;
+
+                // Loop through 7 days
+                for (let i = 0; i < 7; i++) {
+                    const dayDate = new Date(currentStartOfWeek);
+                    dayDate.setDate(currentStartOfWeek.getDate() + i);
+                    const dateStr = formatDate(dayDate);
+
+                    const col = document.createElement('div');
+                    col.className = 'day-column';
+                    
+                    // Check if entire day is non-working (simple check: if no hours defined for this day)
+                    const dayOfWeek = dayDate.getDay();
+                    const isWorkingDay = businessHours.some(bh => bh.daysOfWeek.includes(dayOfWeek));
+                    
+                    if (!isWorkingDay) {
+                        col.style.backgroundColor = '#f0f0f0'; // Gray out non-working days
+                        col.title = "Non-working day";
+                    }
+
+                    const header = document.createElement('div');
+                    header.className = 'day-header';
+                    header.textContent = dayDate.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' });
+                    // Highlight today
+                    if (dateStr === formatDate(new Date())) {
+                        header.style.color = 'var(--color-primary)';
+                    }
+                    col.appendChild(header);
+
+                    // Add "Block Time" button for the day
+                    const blockBtn = document.createElement('button');
+                    blockBtn.textContent = '+ Bloquer';
+                    blockBtn.style.width = '100%';
+                    blockBtn.style.marginBottom = '10px';
+                    blockBtn.style.cursor = 'pointer';
+                    blockBtn.onclick = () => promptBlockTime(dateStr);
+                    col.appendChild(blockBtn);
+
+                    // Find events for this day
+                    const daysEvents = events.filter(e => e.start.startsWith(dateStr));
+                    
+                    daysEvents.sort((a, b) => a.start.localeCompare(b.start));
+
+                    daysEvents.forEach(event => {
+                        const card = document.createElement('div');
+                        card.className = 'appt-card';
+                        
+                        // Extract time
+                        const time = event.start.split('T')[1].substring(0, 5);
+                        
+                            if (event.extendedProps && event.extendedProps.type === 'blocked') {
+                               card.style.borderLeftColor = 'red';
+                               card.style.background = '#ffe6e6';
+                               card.innerHTML = `
+                                    <span class="appt-time">${time}</span>
+                                    <div>Indisponible</div>
+                                    <button onclick="deleteUnavailability('${event.id.split('_')[1]}')" style="font-size:0.8rem; color:red; border:none; background:none; cursor:pointer;">Supprimer</button>
+                               `;
+                            } else {
+                                let statusHtml = '';
+                                if (event.extendedProps && event.extendedProps.status !== 'ACCEPTED') {
+                                    const quoteId = event.id.split('_')[1];
+                                    statusHtml = `<a href="/admin/quote/${quoteId}/accept" class="btn-sm" style="font-size:0.8rem; color:green; text-decoration:none;">✓ Accepter</a>`;
+                                } else {
+                                    statusHtml = `<span style="font-size:0.8rem; color:green;">✓ Accepté</span>`;
+                                }
+
+                                card.innerHTML = `
+                                    <span class="appt-time">${time}</span>
+                                    <div>${event.title}</div>
+                                    ${statusHtml}
+                                `;
+                            }
+                        col.appendChild(card);
+                    });
+
+                    grid.appendChild(col);
+                }
+            }
+
+            window.promptBlockTime = async function(dateStr) {
+                const startTime = prompt("Heure de début (HH:MM)", "09:00");
+                if (!startTime) return;
+                const endTime = prompt("Heure de fin (HH:MM)", "17:00");
+                if (!endTime) return;
+
+                const start = `${dateStr}T${startTime}:00`;
+                const end = `${dateStr}T${endTime}:00`;
+
+                const formData = new FormData();
+                formData.append('start', start);
+                formData.append('end', end);
+
+                try {
+                    const res = await fetch('/admin/unavailability/add', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const data = await res.json();
+                    if (data.status === 'success') {
+                        renderCalendar();
+                    } else {
+                        alert('Erreur lors du blocage');
+                    }
+                } catch (e) {
+                    console.error(e);
+                    alert('Erreur réseau');
+                }
+            }
+
+            window.deleteUnavailability = async function(id) {
+                if (!confirm('Voulez-vous vraiment débloquer ce créneau ?')) return;
+
+                try {
+                    const res = await fetch(`/admin/unavailability/delete/${id}`, {
+                        method: 'DELETE'
+                    });
+                    const data = await res.json();
+                    if (data.status === 'success') {
+                        renderCalendar();
+                    } else {
+                        alert('Erreur lors de la suppression');
+                    }
+                } catch (e) {
+                    console.error(e);
+                    alert('Erreur réseau');
+                }
+            }
+
+            document.getElementById('prevWeek').addEventListener('click', () => {
+                currentStartOfWeek.setDate(currentStartOfWeek.getDate() - 7);
+                renderCalendar();
+            });
+
+            document.getElementById('nextWeek').addEventListener('click', () => {
+                currentStartOfWeek.setDate(currentStartOfWeek.getDate() + 7);
+                renderCalendar();
+            });
+
+            renderCalendar();
+        });
+    </script>
+{% endblock %}

@@ -1,0 +1,113 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Tableau de Bord Admin - Bassin Vert{% endblock %}
+
+{% block body %}
+<div class="container" style="margin-top: 40px;">
+    <h1 class="mb-4">Tableau de Bord Admin</h1>
+
+    <div class="row" style="display: flex; gap: 30px;">
+        <!-- Sidebar / Menu -->
+        <div class="col-md-3" style="flex: 1; max-width: 250px;">
+            <div class="list-group">
+                <a href="{{ path('admin_dashboard') }}" class="list-group-item active" style="display: block; padding: 10px; margin-bottom: 5px; background: var(--color-primary); color: white; text-decoration: none; border-radius: 4px;">Tableau de Bord</a>
+                <a href="{{ path('admin_calendar') }}" class="list-group-item" style="display: block; padding: 10px; margin-bottom: 5px; background: var(--color-surface-light); color: var(--color-text-primary); text-decoration: none; border-radius: 4px;">Gérer le Calendrier</a>
+                <a href="{{ path('admin_schedule') }}" class="list-group-item" style="display: block; padding: 10px; margin-bottom: 5px; background: var(--color-surface-light); color: var(--color-text-primary); text-decoration: none; border-radius: 4px;">Heures d'Ouverture</a>
+                <a href="{{ path('admin_reviews') }}" class="list-group-item" style="display: block; padding: 10px; margin-bottom: 5px; background: var(--color-surface-light); color: var(--color-text-primary); text-decoration: none; border-radius: 4px;">Gérer les Avis</a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-md-9" style="flex: 3;">
+            
+            <!-- Master Calendar -->
+            <div class="card mb-4" style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                <h3 class="card-title">Aperçu du Planning</h3>
+                <div id="admin-calendar" style="height: 600px;"></div>
+            </div>
+
+            <!-- Recent Requests -->
+            <div class="card" style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-top: 20px;">
+                <h3 class="card-title">Demandes de Devis Récentes</h3>
+                <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+                    <thead>
+                        <tr style="text-align: left; border-bottom: 1px solid #eee;">
+                            <th style="padding: 10px;">Date</th>
+                            <th style="padding: 10px;">Photo</th>
+                            <th style="padding: 10px;">Client</th>
+                            <th style="padding: 10px;">Service</th>
+                            <th style="padding: 10px;">Planifié</th>
+                            <th style="padding: 10px;">Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for quote in recentQuotes %}
+                        <tr style="border-bottom: 1px solid #f9f9f9;">
+                            <td style="padding: 10px;">{{ quote.createdAt|date('Y-m-d') }}</td>
+                            <td style="padding: 10px;">
+                                {% if quote.imagePath %}
+                                    <a href="{{ asset('uploads/quotes/' ~ quote.imagePath) }}" target="_blank">
+                                        <img src="{{ asset('uploads/quotes/' ~ quote.imagePath) }}" style="height: 50px; width: auto; border-radius: 4px; object-fit: cover;" alt="Photo du Devis">
+                                    </a>
+                                {% else %}
+                                    <span style="color: #ccc; font-size: 0.85em;">Pas de photo</span>
+                                {% endif %}
+                            </td>
+                            <td style="padding: 10px;">{{ quote.contactName|default('N/A') }}</td>
+                            <td style="padding: 10px;">{{ quote.serviceType }}</td>
+                            <td style="padding: 10px;">
+                                {% if quote.scheduledAt %}
+                                    {{ quote.scheduledAt|date('Y-m-d H:i') }}
+                                {% else %}
+                                    <span style="color: grey;">Non planifié</span>
+                                {% endif %}
+                            </td>
+                            <td style="padding: 10px;">
+                                <span style="background: #e8f5e9; color: #2e7d32; padding: 2px 8px; border-radius: 10px; font-size: 0.85em;">{{ quote.status }}</span>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" style="padding: 20px; text-align: center;">Aucune demande récente trouvée.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- FullCalendar -->
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var calendarEl = document.getElementById('admin-calendar');
+        var calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            locale: 'fr',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            },
+            buttonText: {
+                today: 'Aujourd\'hui',
+                month: 'Mois',
+                week: 'Semaine',
+                day: 'Jour',
+                list: 'Liste'
+            },
+            events: '/api/bookings', // Reuse the same API
+            businessHours: {{ businessHours|json_encode|raw }}, // Gray out non-working hours
+            eventColor: '#8A9A5B',
+            eventClick: function(info) {
+                // Future: Open modal with details
+                alert('ID Réservation : ' + info.event.id + '\nDébut : ' + info.event.start.toLocaleString());
+            }
+        });
+        calendar.render();
+    });
+</script>
+{% endblock %}

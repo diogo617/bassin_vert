@@ -1,0 +1,81 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Bassin Vert - Jardins Zen & Paysagisme{% endblock %}
+
+{% block body %}
+    <section class="hero">
+        <div class="hero-slideshow">
+            {# Placeholders for now - in production use real images #}
+            <div class="hero-slide" style="background-image: url('https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?q=80&w=2664&auto=format&fit=crop');"></div>
+            <div class="hero-slide" style="background-image: url('https://images.unsplash.com/photo-1598902108854-10e335adac99?q=80&w=2669&auto=format&fit=crop');"></div>
+            <div class="hero-slide" style="background-image: url('https://images.unsplash.com/photo-1558904541-efa843a96f01?q=80&w=2669&auto=format&fit=crop');"></div>
+        </div>
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+            <h1>Créez votre sanctuaire Zen</h1>
+            <p>Paysagisme professionnel avec une touche de nature et d'harmonie.</p>
+            <a href="{{ path('app_quote') }}" class="btn-cta">Demander un Devis</a>
+        </div>
+    </section>
+
+    <section class="services-section">
+        <div class="container">
+            <h2 class="section-title">Notre Expertise</h2>
+            <p class="section-subtitle">Alliant jardinage traditionnel et esthétique moderne pour créer des espaces extérieurs durables.</p>
+            
+            <div class="services-grid">
+                <div class="service-card">
+                    <span class="service-icon" role="img" aria-label="Pousse">🌱</span>
+                    <h3>Entretien de Jardin</h3>
+                    <p>Tonte, élagage et soins saisonniers pour garder votre jardin éclatant toute l'année.</p>
+                </div>
+                <div class="service-card">
+                    <span class="service-icon" role="img" aria-label="Rocher">🪨</span>
+                    <h3>Paysagisme</h3>
+                    <p>Allées, jardins de rocaille et éléments structurels qui définissent votre espace.</p>
+                </div>
+                <div class="service-card">
+                    <span class="service-icon" role="img" aria-label="Goutte d'eau">💧</span>
+                    <h3>Points d'Eau</h3>
+                    <p>Bassins sereins et fontaines pour apporter le son apaisant de l'eau chez vous.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="reviews-section">
+        <div class="container">
+            <h2 class="section-title">Clients Heureux</h2>
+            <p class="section-subtitle">Découvrez ce que nos clients disent de leurs nouveaux espaces extérieurs.</p>
+            
+            {% if reviews is not empty %}
+            <div class="reviews-grid">
+                {% for review in reviews %}
+                <div class="review-card">
+                    <div class="review-header">
+                        <span class="customer-name">{{ review.customerName }}</span>
+                        <div class="rating">
+                            {% for i in 1..5 %}
+                                {% if i <= review.rating %}★{% else %}☆{% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <p class="review-comment">"{{ review.comment }}"</p>
+                    <small style="color: var(--color-text-muted); display: block; margin-top: 15px;">
+                        {{ review.createdAt|date('d/m/Y') }}
+                    </small>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center p-5">
+                <p>Soyez le premier à laisser un avis et partagez votre expérience !</p>
+            </div>
+            {% endif %}
+
+            <div class="text-center mt-5">
+                <a href="{{ path('app_review_new') }}" class="btn btn-outline-primary">Ajouter un avis</a>
+            </div>
+        </div>
+    </section>
+{% endblock %}

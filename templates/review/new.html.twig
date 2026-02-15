@@ -1,0 +1,33 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Ajouter un Avis - Bassin Vert{% endblock %}
+
+{% block body %}
+<div class="container section-padding">
+    <h1 class="text-center mb-5">Partagez votre expérience</h1>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm p-4">
+                {{ form_start(form) }}
+                    <div class="mb-3">
+                        {{ form_row(form.customerName, {'attr': {'class': 'form-control'}}) }}
+                    </div>
+                    <div class="mb-3">
+                        {{ form_row(form.rating, {'attr': {'class': 'form-select'}}) }}
+                    </div>
+                    <div class="mb-3">
+                        {{ form_row(form.comment, {'attr': {'class': 'form-control'}}) }}
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">Envoyer l'avis</button>
+                    </div>
+                {{ form_end(form) }}
+            </div>
+            <div class="text-center mt-3">
+                <a href="{{ path('app_home') }}" class="text-muted">Retour à l'accueil</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
