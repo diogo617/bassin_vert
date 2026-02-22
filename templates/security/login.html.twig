@@ -47,6 +47,10 @@
             <label for="inputPassword" style="display:none;">Mot de passe</label>
             <input type="password" name="_password" id="inputPassword" class="form-input" autocomplete="current-password" required placeholder="Mot de passe">
 
+            <div style="text-align: right; margin-top: -10px; margin-bottom: 15px;">
+                <a href="#" style="font-size: 0.9em; color: #666; text-decoration: none;">Mot de passe oublié ?</a>
+            </div>
+
             <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
 
             <button class="btn-login" type="submit">
